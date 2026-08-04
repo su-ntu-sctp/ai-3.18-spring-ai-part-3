@@ -272,8 +272,10 @@ Because we instructed the AI to only answer from context, it should say it doesn
 To really appreciate what RAG does, compare this with a plain `/chat` call using the same question:
 
 ```
-localhost:8080/chat?question=What is ACME CRM's refund policy?
+localhost:8080/chat?message=What is ACME CRM's refund policy?
 ```
+
+> **Note:** The parameter name here (`message`) matches the `/chat` endpoint built in Lesson 3.12. If your own `/chat` endpoint uses a different `@RequestParam` name, use that instead — check your `ChatController` first.
 
 The plain `/chat` endpoint has no knowledge of ACME CRM — it will either say it doesn't know, or worse, invent a plausible-sounding but completely fabricated answer. This is called **hallucination** and is one of the biggest risks in AI applications.
 
