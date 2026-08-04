@@ -92,7 +92,7 @@ Add this to your `<dependencies>` block in `pom.xml`:
 </dependency>
 ```
 
-> **Note:** The artifact ID is `spring-ai-vector-store-advisor` — not `spring-ai-advisors-vector-store`. The module was renamed in Spring AI 1.0 GA to align with naming conventions. Using the old name will cause a build failure.
+> **Note:** The artifact ID is `spring-ai-vector-store-advisor` — not `spring-ai-advisors-vector-store`. The module was renamed in Spring AI 2.0 to align with naming conventions. Using the old name will cause a build failure.
 
 No version number needed — the BOM we added in Lesson 3.12 manages the version automatically.
 
@@ -169,7 +169,7 @@ public class RagConfig {
     List<Document> documents = textReader.get();
 
     // Split into smaller chunks for better retrieval
-    List<Document> chunks = new TokenTextSplitter().apply(documents);
+    List<Document> chunks = TokenTextSplitter.builder().build().apply(documents);
 
     // Load chunks into the vector store
     // This is where embeddings are generated — each chunk is converted to a vector
@@ -181,7 +181,7 @@ public class RagConfig {
 }
 ```
 
-> **Note:** Pass `"classpath:faq.txt"` as a plain string directly to `TextReader`. Do NOT use `@Value("classpath:faq.txt")` with a `Resource` field — `TextReader` does not accept a `Resource` object in the constructor in current Spring AI versions and will cause a startup error.
+> **Note:** `TextReader` accepts either a plain classpath string or a Spring `Resource` — we're using the string form here for simplicity.
 
 Let's understand what is happening here:
 
@@ -299,8 +299,8 @@ Add a second knowledge base to your application about a fictional product catalo
 **Hint:** To load both files, read and chunk each one separately, then combine the lists before adding to the store:
 
 ```java
-List<Document> faqChunks = new TokenTextSplitter().apply(new TextReader("classpath:faq.txt").get());
-List<Document> productChunks = new TokenTextSplitter().apply(new TextReader("classpath:products.txt").get());
+List<Document> faqChunks = TokenTextSplitter.builder().build().apply(new TextReader("classpath:faq.txt").get());
+List<Document> productChunks = TokenTextSplitter.builder().build().apply(new TextReader("classpath:products.txt").get());
 
 List<Document> allChunks = new ArrayList<>();
 allChunks.addAll(faqChunks);
