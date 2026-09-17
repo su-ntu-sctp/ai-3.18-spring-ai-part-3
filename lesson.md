@@ -285,31 +285,66 @@ RAG eliminates hallucination for your domain-specific data by grounding every an
 
 ### 🧑‍💻 Activity **(20 minutes)**
 
-Add a second knowledge base to your application about a fictional product catalogue.
+Add a second knowledge base to your application — a product catalogue — and build a product advisor endpoint that answers from it.
 
-1. Create `src/main/resources/products.txt` with at least 5 fictional products, each with a name, description, price, and key features. Make it realistic — think electronics, software, or any product category you like.
+#### Step 1 — Create `src/main/resources/products.txt`
 
-2. Update `RagConfig.java` to also load the products file into the same vector store. Add a second `TextReader` for `"classpath:products.txt"` and include its chunks in the same `store.add()` call.
+Copy the content below into the file. (If you finish early, feel free to swap in your own product category.)
 
-3. Create a new endpoint `/product-info` in `RagController.java` with a system prompt suitable for a product advisor assistant.
-
-4. Test with questions like:
-   - "What products do you have under $100?"
-   - "Tell me about [product name]"
-   - "What are the key features of [product name]?"
-
-**Hint:** To load both files, read and chunk each one separately, then combine the lists before adding to the store:
-
-```java
-List<Document> faqChunks = TokenTextSplitter.builder().build().apply(new TextReader("classpath:faq.txt").get());
-List<Document> productChunks = TokenTextSplitter.builder().build().apply(new TextReader("classpath:products.txt").get());
-
-List<Document> allChunks = new ArrayList<>();
-allChunks.addAll(faqChunks);
-allChunks.addAll(productChunks);
-
-store.add(allChunks);
 ```
+ACME TECH - PRODUCT CATALOGUE
+
+Product: NovaBook Air 14
+Description: An ultra-thin 14-inch laptop built for developers and business travelers. Fanless design with all-day battery life.
+Price: $1,299
+Key Features: 14-hour battery life, 16GB unified memory, 512GB SSD, fanless silent design, weighs just 1.1kg.
+
+Product: PulseBuds Pro
+Description: Noise-cancelling wireless earbuds with adaptive sound and a compact charging case.
+Price: $179
+Key Features: Active noise cancellation, 6-hour playback per charge (24 hours with case), IPX4 water resistance, touch controls.
+
+Product: GridDesk Standing Converter
+Description: A desktop standing converter that turns any desk into a sit-stand workstation in seconds.
+Price: $249
+Key Features: Gas-spring height adjustment, supports up to two monitors, built-in cable management, holds up to 15kg.
+
+Product: SnapCart Mini Printer
+Description: A compact photo printer that connects to your phone and prints credit-card-sized photos instantly.
+Price: $89
+Key Features: Bluetooth connectivity, prints in under 40 seconds, no ink required (uses ZINK paper), rechargeable battery.
+
+Product: OrbitLock Smart Padlock
+Description: A Bluetooth-enabled padlock for lockers, gyms, and storage units, controlled entirely from a phone app.
+Price: $59
+Key Features: Fingerprint and app unlock, waterproof housing, 6-month battery life, share temporary access codes with others.
+```
+
+#### Step 2 — Load `products.txt` into the same vector store
+
+In `RagConfig.java`, read and chunk the products file using the **same three steps** you used for `faq.txt` — create a `TextReader`, call `.get()`, then apply `TokenTextSplitter`.
+
+**Hint:** Both files go into the *same* vector store. Combine the two chunk lists into one `ArrayList` first, then make a single `store.add()` call — don't call `store.add()` twice.
+
+#### Step 3 — Add a `/product-info` endpoint
+
+In `RagController.java`, create a second `ChatClient` in the same constructor, with its own system prompt. Your prompt should instruct the AI to:
+
+- act as a friendly product advisor for ACME Tech
+- answer using only the provided context
+- say it doesn't have the information rather than guessing, if a product or detail isn't there
+
+**Hint:** Build the second client the same way as the first — `chatClientBuilder` with `.defaultSystem(...)` and `.defaultAdvisors(...)`, using the same `vectorStore`. Store it in a second field.
+
+#### Step 4 — Test it
+
+```
+localhost:8080/product-info?question=What products do you have under $100?
+localhost:8080/product-info?question=Tell me about the PulseBuds Pro
+localhost:8080/product-info?question=What are the key features of the OrbitLock Smart Padlock?
+```
+
+> **Watch your imports:** When VS Code autocompletes `VectorStore` or `EmbeddingModel`, it may offer classes from `com.openai...` — these are from OpenAI's SDK and will not compile here. Always pick the `org.springframework.ai...` version.
 
 ---
 
