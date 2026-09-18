@@ -37,10 +37,12 @@ public class RagConfig {
     // Create an in-memory vector store
     SimpleVectorStore store = SimpleVectorStore.builder(embeddingModel).build();
 
-    // Read and chunk the FAQ file
-    TextReader faqReader = new TextReader("classpath:faq.txt");
-    List<Document> faqDocuments = faqReader.get();
-    List<Document> faqChunks = TokenTextSplitter.builder().build().apply(faqDocuments);
+    // Read the FAQ file directly using the classpath path string
+    TextReader textReader = new TextReader("classpath:faq.txt");
+    List<Document> documents = textReader.get();
+
+    // Split into smaller chunks for better retrieval
+    List<Document> chunks = TokenTextSplitter.builder().build().apply(documents);
 
     // Read and chunk the Products file — same three steps
     TextReader productReader = new TextReader("classpath:products.txt");
@@ -49,7 +51,7 @@ public class RagConfig {
 
     // Combine both sets of chunks, then load them in one call
     List<Document> allChunks = new ArrayList<>();
-    allChunks.addAll(faqChunks);
+    allChunks.addAll(chunks);
     allChunks.addAll(productChunks);
 
     store.add(allChunks);
@@ -122,6 +124,8 @@ public class RagController {
 ```
 
 > **Note:** Students' system prompts will differ in wording — that's fine. What matters is that it constrains the AI to the provided context and tells it not to guess.
+
+> **Common mistake:** When copy-pasting the FAQ block to create the products block, it's easy to leave `textReader.get()` instead of changing it to `productReader.get()`. This compiles cleanly and throws no error — the products file simply never loads, and the AI replies "I don't have that information". The combined `allChunks.size()` in the log is what catches it: if the chunk count doesn't grow after adding the second file, something didn't load.
 
 ---
 
