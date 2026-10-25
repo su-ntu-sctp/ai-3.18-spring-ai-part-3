@@ -322,9 +322,45 @@ Key Features: Fingerprint and app unlock, waterproof housing, 6-month battery li
 
 #### Step 2 — Load `products.txt` into the same vector store
 
-In `RagConfig.java`, read and chunk the products file using the **same three steps** you used for `faq.txt` — create a `TextReader`, call `.get()`, then apply `TokenTextSplitter`.
+Replace your `vectorStore` method in `RagConfig.java` with the version below. It reads and chunks the products file using the **same three steps** as `faq.txt`, then combines both chunk lists before loading them in a single `store.add()` call.
 
-**Hint:** Both files go into the *same* vector store. Combine the two chunk lists into one `ArrayList` first, then make a single `store.add()` call — don't call `store.add()` twice.
+```java
+@Bean
+public VectorStore vectorStore(EmbeddingModel embeddingModel) {
+  // Create an in-memory vector store
+  SimpleVectorStore store = SimpleVectorStore.builder(embeddingModel).build();
+
+  // Read the FAQ file directly using the classpath path string
+  TextReader textReader = new TextReader("classpath:faq.txt");
+  List<Document> documents = textReader.get();
+
+  // Split into smaller chunks for better retrieval
+  List<Document> chunks = TokenTextSplitter.builder().build().apply(documents);
+
+  // Read and chunk the products file — same three steps
+  TextReader productReader = new TextReader("classpath:products.txt");
+  List<Document> productDocuments = productReader.get();
+  List<Document> productChunks = TokenTextSplitter.builder().build().apply(productDocuments);
+
+  // Combine both sets of chunks, then load them in one call
+  List<Document> allChunks = new ArrayList<>();
+  allChunks.addAll(chunks);
+  allChunks.addAll(productChunks);
+
+  store.add(allChunks);
+
+  System.out.println("✅ FAQ + Products loaded into vector store — " + allChunks.size() + " chunks");
+  return store;
+}
+```
+
+You will also need one new import at the top of the file:
+
+```java
+import java.util.ArrayList;
+```
+
+Restart the application. The chunk count in the log should now be higher than before — that is how you confirm both files loaded.
 
 #### Step 3 — Add a `/product-info` endpoint
 
